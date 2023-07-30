@@ -28,6 +28,10 @@ import { UserInfoScreen } from "../screens/UserInfoScreen";
 import { FavoriteScreen } from "../screens/FavouriteScreen";
 import { OrderSuccessScreen } from "../screens/OrderSuccessScreen";
 import { RedeemScreen } from "../screens/RedeemScreen";
+// import LoginScreen from "../screens/LoginScreen";
+import { SignUpScreen } from "../screens/SignUpScreen";
+import { LoginScreen } from "../screens/LoginScreen";
+import { CartContextProvider } from "../store/cart-context";
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -36,7 +40,53 @@ LogBox.ignoreLogs([
   "Non-serializable values were found in the navigation state",
 ]);
 
-export default function AppNavigation() {
+export const AuthenticatedAppNavigation = () => {
+  return (
+    <CartContextProvider>
+      <NavigationContainer>
+        <Stack.Navigator
+          screenOptions={{
+            contentStyle: { backgroundColor: "white" },
+          }}
+        >
+          <Stack.Screen
+            name="Home"
+            options={{ headerShown: false }}
+            component={HomeTabs}
+          />
+          <Stack.Screen
+            name="Product"
+            options={{ headerShown: false }}
+            component={ProductScreen}
+          />
+          <Stack.Screen
+            name="cart"
+            options={{ headerShown: false }}
+            component={MyCartScreen}
+          />
+          <Stack.Screen
+            name="account"
+            options={{ headerShown: false }}
+            component={UserInfoScreen}
+          />
+          <Stack.Screen
+            name="OrderSuccess"
+            options={{ headerShown: false }}
+            component={OrderSuccessScreen}
+          />
+          <Stack.Screen
+            name="redeem"
+            options={{ headerShown: false }}
+            component={RedeemScreen}
+          />
+        </Stack.Navigator>
+      </NavigationContainer>
+    </CartContextProvider>
+  );
+};
+
+export const UnAuthenticatedAppNavigation = () => {
+  console.log("AuthStack");
   return (
     <NavigationContainer>
       <Stack.Navigator
@@ -45,39 +95,19 @@ export default function AppNavigation() {
         }}
       >
         <Stack.Screen
-          name="Home"
+          name="Login"
           options={{ headerShown: false }}
-          component={HomeTabs}
+          component={LoginScreen}
         />
         <Stack.Screen
-          name="Product"
+          name="SignUp"
           options={{ headerShown: false }}
-          component={ProductScreen}
-        />
-        <Stack.Screen
-          name="cart"
-          options={{ headerShown: false }}
-          component={MyCartScreen}
-        />
-        <Stack.Screen
-          name="account"
-          options={{ headerShown: false }}
-          component={UserInfoScreen}
-        />
-        <Stack.Screen
-          name="OrderSuccess"
-          options={{ headerShown: false }}
-          component={OrderSuccessScreen}
-        />
-        <Stack.Screen
-          name="redeem"
-          options={{ headerShown: false }}
-          component={RedeemScreen}
+          component={SignUpScreen}
         />
       </Stack.Navigator>
     </NavigationContainer>
   );
-}
+};
 
 function HomeTabs() {
   return (

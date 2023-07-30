@@ -1,4 +1,5 @@
 import {
+  Alert,
   Animated,
   Dimensions,
   Image,
@@ -16,11 +17,14 @@ import { themeColors } from "../theme";
 import { AntDesign } from "@expo/vector-icons";
 import { FontAwesome } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
-import { useState } from "react";
+import { useContext, useState } from "react";
 import { SwipeListView } from "react-native-swipe-list-view";
 import { Feather } from "@expo/vector-icons";
 import { CommonLayout } from "../components/Layout/CommonLayout";
-import { CommonButton } from "../components/UI/CommonButton";
+import { CommonButton } from "../components/ui/CommonButton";
+import { CartContext } from "../store/cart-context";
+import { CartItem } from "../components/CartItem";
+import { getUserInfo, placeNewOrder } from "../util/http";
 
 const rowTranslateAnimatedValues = {};
 Array(20)
@@ -30,13 +34,12 @@ Array(20)
   });
 
 export const MyCartScreen = () => {
+  const cartCtx = useContext(CartContext);
   const ios = Platform.OS == "ios";
   const navigation = useNavigation();
 
   const [listData, setListData] = useState(
-    Array(4)
-      .fill("")
-      .map((_, i) => ({ key: `${i}`, text: `item #${i}` }))
+    cartCtx.cartList.map((item) => ({ key: item.id, data: item }))
   );
   const onSwipeValueChange = (swipeData) => {
     const { key, value } = swipeData;
@@ -45,7 +48,9 @@ export const MyCartScreen = () => {
       Animated.timing(rowTranslateAnimatedValues[key], {
         toValue: 0,
         duration: 200,
+        useNativeDriver: true,
       }).start(() => {
+        cartCtx.removeFromCart(key);
         const newData = [...listData];
         const prevIndex = listData.findIndex((item) => item.key === key);
         newData.splice(prevIndex, 1);
@@ -55,46 +60,37 @@ export const MyCartScreen = () => {
     }
   };
 
-  const renderItem = (data) => (
-    <Animated.View className="p-2 w-max h-32">
-      <TouchableHighlight
-        onPress={() => console.log("You touched me")}
-        style={styles.rowFront}
-        className="items-center justify-center h-28 bg-gray-50 rounded-lg w-max p-1 shadow-sm shadow-black"
-        underlayColor={"#AAA"}
-      >
-        <View className="flex-row">
-          <View style={{ flex: 3 }} className="items-center justify-center">
-            <Image
-              className="w-20 h-20 "
-              source={require("../assets/images/coffee1.png")}
-            />
-          </View>
-          <View style={{ flex: 7 }}>
-            <View style={{ flex: 1 }}>
-              <Text
-                className="font-extrabold text-base"
-                style={{ color: themeColors.bgDark }}
-              >
-                Americano
-              </Text>
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text className="text-gray-500">
-                single | iced | medium | full ice
-              </Text>
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text className="font-semibold text-base text-gray-600">x 1</Text>
-            </View>
-          </View>
-          <View style={{ flex: 2 }} className="items-center justify-center">
-            <Text className="font-bold">$150.00</Text>
-          </View>
-        </View>
-      </TouchableHighlight>
-    </Animated.View>
-  );
+  const handlePlaceOrder = async () => {
+    const cartList = cartCtx.cartList;
+    const userInfo = await getUserInfo();
+    console.log(userInfo);
+    if (
+      !userInfo["Phone number"] ||
+      !userInfo["Address"] ||
+      !userInfo["Full name"]
+    ) {
+      Alert.alert(
+        "Missing user information",
+        "Please fullfil your information to place an order",
+        [
+          {
+            text: "Add information",
+            onPress: () => navigation.navigate("account"),
+            style: { color: "gray" },
+          },
+          {
+            text: "Cancel",
+          },
+        ]
+      );
+    } else {
+      placeNewOrder(cartList);
+      for (let i = 0; i < cartList.length; i++) {
+        cartCtx.removeAll();
+      }
+      navigation.navigate("OrderSuccess");
+    }
+  };
 
   const renderHiddenItem = () => (
     <Animated.View className="flex-1 p-2">
@@ -118,7 +114,7 @@ export const MyCartScreen = () => {
         <SwipeListView
           disableRightSwipe
           data={listData}
-          renderItem={renderItem}
+          renderItem={CartItem}
           renderHiddenItem={renderHiddenItem}
           rightOpenValue={-Dimensions.get("window").width}
           previewRowKey={"0"}
@@ -129,10 +125,12 @@ export const MyCartScreen = () => {
           recalculateHiddenLayout={true}
         />
       </View>
-      <CommonButton
-        title="Place Order"
-        onPress={() => navigation.navigate("OrderSuccess")}
-      ></CommonButton>
+      {listData.length > 0 && (
+        <CommonButton
+          title="Place Order"
+          onPress={handlePlaceOrder}
+        ></CommonButton>
+      )}
     </CommonLayout>
   );
 };

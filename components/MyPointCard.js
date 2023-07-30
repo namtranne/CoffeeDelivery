@@ -1,9 +1,14 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { themeColors } from "../theme";
-import { CommonButton } from "./UI/CommonButton";
+import { CommonButton } from "./ui/CommonButton";
 import { useNavigation } from "@react-navigation/native";
 
-export const MyPointCard = () => {
+export const MyPointCard = ({ orders }) => {
+  const pointPerCup = 12;
+  let displayPoint = 0;
+  for (let i = 0; i < orders.length; i++) {
+    displayPoint += 12 * orders[i].items.length;
+  }
   const navigation = useNavigation();
   return (
     <View
@@ -12,7 +17,7 @@ export const MyPointCard = () => {
     >
       <View className="flex-column mb-2">
         <Text className="font-normal text-white text-base">My Points:</Text>
-        <Text className="text-2xl font-medium text-white">2750</Text>
+        <Text className="text-2xl font-medium text-white">{displayPoint}</Text>
       </View>
       <View>
         <CommonButton

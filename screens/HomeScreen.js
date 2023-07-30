@@ -10,7 +10,7 @@ import {
   StyleSheet,
   Pressable,
 } from "react-native";
-import React, { useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { themeColors } from "../theme";
 import { StatusBar } from "expo-status-bar";
@@ -23,11 +23,26 @@ import { FontAwesome } from "@expo/vector-icons";
 import { AntDesign } from "@expo/vector-icons";
 import { useNavigation, useNavigationState } from "@react-navigation/native";
 import { LoyaltyCard } from "../components/LoyaltyCard";
+import { AuthContext } from "../store/auth-context";
+import { getUserInfo } from "../util/http";
 const { width, height } = Dimensions.get("window");
 const ios = Platform.OS == "ios";
 export default function HomeScreen() {
+  const authCtx = useContext(AuthContext);
   const [activeCategory, setActiveCategory] = useState(null);
   const navigation = useNavigation();
+  const [userName, setUserName] = useState("");
+  useEffect(() => {
+    async function fetchUserInfo() {
+      const userInfo = await getUserInfo();
+      if (userInfo) {
+        if (userInfo["Full name"]) {
+          setUserName(userInfo["Full name"]);
+        }
+      }
+    }
+    fetchUserInfo();
+  }, []);
   return (
     <View className="flex-1 relative bg-white">
       <StatusBar />
@@ -42,7 +57,7 @@ export default function HomeScreen() {
               className="font-semibold text-xl"
               style={{ color: themeColors.bgDark }}
             >
-              Anderson
+              {userName ? userName : "Anderson"}
             </Text>
           </View>
 
@@ -58,6 +73,9 @@ export default function HomeScreen() {
               className="p-3"
             >
               <AntDesign name="shoppingcart" size={26} color="black" />
+            </Pressable>
+            <Pressable onPress={() => authCtx.logout()} className="p-3">
+              <AntDesign name="logout" size={26} color="black" />
             </Pressable>
           </View>
         </View>

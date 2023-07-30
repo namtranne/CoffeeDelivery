@@ -5,8 +5,9 @@ import {
   Image,
   Dimensions,
   Platform,
+  Alert,
 } from "react-native";
-import React, { useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import { useNavigation } from "@react-navigation/native";
 import { StatusBar } from "expo-status-bar";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -20,17 +21,57 @@ import { themeColors } from "../theme";
 import { ShoppingBag } from "react-native-feather";
 import { CoffeeOptions } from "../components/CoffeeOptions";
 import { QuantitySelect } from "../components/QuantitySelect";
+import { addFavorite, getFavorite, removeFromFavorite } from "../util/http";
+import { CartContext } from "../store/cart-context";
 const { width, height } = Dimensions.get("window");
 const ios = Platform.OS == "ios";
 
-export default function FavouriteScreen(props) {
+export default function ProductScreen(props) {
+  const cartCtx = useContext(CartContext);
   const item = props.route.params;
   const [size, setSize] = useState("small");
   const [shot, setShot] = useState("single");
   const [ice, setIce] = useState("0%");
   const [sugar, setSugar] = useState("0%");
   const [quantity, setQuantity] = useState(1);
+  const [isFavorite, setIsFavorite] = useState(false);
+  useEffect(() => {
+    async function fetchFavorites() {
+      let favorites = await getFavorite();
+      if (favorites.indexOf(item.id) >= 0) {
+        setIsFavorite(true);
+      }
+    }
+    fetchFavorites();
+  }, []);
   const navigation = useNavigation();
+  function addToCart() {
+    const cartList = cartCtx.cartList;
+    if (cartList.length >= 7) {
+      Alert.alert("Cart overload!", "Can not add more than 7 items to cart");
+      return;
+    }
+    const idList = cartList.map((item) => item.id);
+    let newItemId = 0;
+    for (let i = 1; i <= 7; i++) {
+      if (idList.indexOf(i) == -1) {
+        newItemId = i;
+        break;
+      }
+    }
+    cartCtx.addToCart({
+      id: newItemId,
+      name: item.name,
+      price: item.price,
+      image: item.image,
+      size: size,
+      shot: shot,
+      ice: ice,
+      sugar: sugar,
+      quantity: quantity,
+    });
+    navigation.navigate("cart");
+  }
   return (
     <View className="flex-1">
       <StatusBar style="light" />
@@ -58,9 +99,27 @@ export default function FavouriteScreen(props) {
             <ArrowLeftCircleIcon size="50" strokeWidth={1.2} color="white" />
           </TouchableOpacity>
 
-          <TouchableOpacity className=" rounded-full border-2 border-white p-2">
-            <HeartIcon size="24" color="white" />
-          </TouchableOpacity>
+          {!isFavorite ? (
+            <TouchableOpacity
+              className=" rounded-full border-2 border-white p-2"
+              onPress={() => {
+                addFavorite(item.id);
+                setIsFavorite(true);
+              }}
+            >
+              <HeartIcon size="24" color="white" />
+            </TouchableOpacity>
+          ) : (
+            <TouchableOpacity
+              className=" rounded-full border-2 border-white p-2"
+              onPress={() => {
+                removeFromFavorite(item.id);
+                setIsFavorite(false);
+              }}
+            >
+              <HeartIcon size="24" color="red" />
+            </TouchableOpacity>
+          )}
         </View>
         <View
           style={{
@@ -161,15 +220,19 @@ export default function FavouriteScreen(props) {
         </View>
         {/* buy now button */}
         <View className="flex-row justify-between px-4">
-          <TouchableOpacity className="p-4 rounded-full border border-gray-400">
+          <TouchableOpacity
+            className="p-4 rounded-full border border-gray-400"
+            onPress={() => navigation.navigate("cart")}
+          >
             <ShoppingBag size="30" color="gray" />
           </TouchableOpacity>
           <TouchableOpacity
             style={{ backgroundColor: themeColors.bgLight }}
             className="p-4 rounded-full flex-1 ml-4"
+            onPress={addToCart.bind(this, quantity)}
           >
             <Text className="text-center text-white text-base font-semibold">
-              Buy now
+              Add to cart
             </Text>
           </TouchableOpacity>
         </View>

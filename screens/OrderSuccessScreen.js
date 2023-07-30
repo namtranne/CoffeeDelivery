@@ -1,6 +1,6 @@
 import { Image, Text, View } from "react-native";
 import { CommonLayout } from "../components/Layout/CommonLayout";
-import { CommonButton } from "../components/UI/CommonButton";
+import { CommonButton } from "../components/ui/CommonButton";
 import { useNavigation } from "@react-navigation/native";
 import { themeColors } from "../theme";
 

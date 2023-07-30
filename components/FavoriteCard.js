@@ -1,7 +1,11 @@
 import { Image, Text, TouchableHighlight, View } from "react-native";
 import { themeColors } from "../theme";
 import { StarIcon } from "react-native-heroicons/solid";
-export const FavoriteCard = () => {
+import { coffeeItems } from "../constants";
+import { categories } from "../constants";
+export const FavoriteCard = ({ data }) => {
+  const displayCoffee = coffeeItems.find((c) => c.id == data);
+  const category = categories.find((c) => c.id == displayCoffee.categoryId);
   return (
     <View className="p-2 w-max h-32">
       <TouchableHighlight
@@ -12,10 +16,7 @@ export const FavoriteCard = () => {
       >
         <View className="flex-row">
           <View style={{ flex: 3 }} className="items-center justify-center">
-            <Image
-              className="w-20 h-20 "
-              source={require("../assets/images/coffee1.png")}
-            />
+            <Image className="w-20 h-20 " source={displayCoffee.image} />
           </View>
           <View style={{ flex: 7 }}>
             <View style={{ flex: 1 }}>
@@ -23,16 +24,16 @@ export const FavoriteCard = () => {
                 className="font-extrabold text-base"
                 style={{ color: themeColors.bgDark }}
               >
-                Americano
+                {displayCoffee.name}
               </Text>
             </View>
             <View style={{ flex: 1 }}>
-              <Text className="text-gray-500">Class Coffee</Text>
+              <Text className="text-gray-500">{category.title}</Text>
             </View>
             <View style={{ flex: 1 }} className="items-center flex-row">
               <StarIcon size="15" color="rgb(120 113 108)" />
               <Text className="text-base font-semibold text-stone-500">
-                4.3
+                {displayCoffee.stars}
               </Text>
             </View>
           </View>
