@@ -1,6 +1,5 @@
 import { Text, TouchableOpacity, View } from "react-native";
 import { themeColors } from "../theme";
-import { useState } from "react";
 export const CoffeeOptions = ({
   children,
   setOption,

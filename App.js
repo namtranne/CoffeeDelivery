@@ -20,9 +20,11 @@ const Root = () => {
   const authCtx = useContext(AuthContext);
   useEffect(() => {
     async function fetchToken() {
-      const token = await AsyncStorage.getItem("email");
-      if (token) {
-        authCtx.authenticate(token);
+      const token = await AsyncStorage.getItem("token");
+      const UID = await AsyncStorage.getItem("UID");
+      const email = await AsyncStorage.getItem("email");
+      if (token && UID && email) {
+        authCtx.authenticate(token, UID, email);
       }
       setIsTryingLoggin(false);
     }

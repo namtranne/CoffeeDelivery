@@ -3,13 +3,16 @@ import { themeColors } from "../theme";
 import { StarIcon } from "react-native-heroicons/solid";
 import { coffeeItems } from "../constants";
 import { categories } from "../constants";
-export const FavoriteCard = ({ data }) => {
+import { removeFromFavorite } from "../util/http";
+import { useContext } from "react";
+import { AuthContext } from "../store/auth-context";
+export const FavoriteCard = ({ data, handleRemoveFromFavorite }) => {
   const displayCoffee = coffeeItems.find((c) => c.id == data);
   const category = categories.find((c) => c.id == displayCoffee.categoryId);
   return (
     <View className="p-2 w-max h-32">
       <TouchableHighlight
-        onPress={() => console.log("You touched me")}
+        onPress={handleRemoveFromFavorite.bind(this, data)}
         //   style={styles.rowFront}
         className="items-center justify-center h-28 bg-gray-50 rounded-lg w-max p-1 shadow-sm shadow-black"
         underlayColor={"#AAA"}

@@ -5,15 +5,13 @@ import axios from "axios";
 
 const URL =
   "https://react-native-authen-c8e68-default-rtdb.asia-southeast1.firebasedatabase.app/";
-export const addFavorite = async (productId) => {
-  const token = await AsyncStorage.getItem("token");
-  const UID = await AsyncStorage.getItem("UID");
-  const favoriteList = await getFavorite();
+export const addFavorite = async (productId, token, UID) => {
+  const favoriteList = await getFavorite(token, UID);
   axios
     .patch(
       `https://react-native-authen-c8e68-default-rtdb.asia-southeast1.firebasedatabase.app/${UID}/favorite/.json?auth=${token}`,
       {
-        favoriteList: [...favoriteList, productId],
+        favoriteList: favoriteList ? [...favoriteList, productId] : [productId],
       }
     )
     .then((res) => {
@@ -21,15 +19,16 @@ export const addFavorite = async (productId) => {
     });
 };
 
-export const placeNewOrder = async (cartList) => {
-  const token = await AsyncStorage.getItem("token");
-  const UID = await AsyncStorage.getItem("UID");
-  const userInfo = await getUserInfo();
+export const placeNewOrder = async (cartList, token, UID) => {
+  const userInfo = await getUserInfo(token, UID);
   let total = 0;
+  let loyalPoint = 0;
+  let redeemPoint = 0;
   for (let i = 0; i < cartList.length; i++) {
     total += cartList[i].price * cartList[i].quantity;
+    loyalPoint += cartList[i].quantity;
+    redeemPoint += cartList[i].quantity * 12;
   }
-  console.log(userInfo.Address);
   const order = {
     items: cartList,
     date: new Date(),
@@ -37,20 +36,23 @@ export const placeNewOrder = async (cartList) => {
     Address: userInfo.Address,
     state: "delivering",
   };
-  axios
-    .post(
-      `https://react-native-authen-c8e68-default-rtdb.asia-southeast1.firebasedatabase.app/${UID}/order.json?auth=${token}`,
-      order
-    )
-    .then((res) => {
-      console.log(res);
-    });
+  let currentLoyalPoint = await getLoyalPoint(token, UID);
+  let currentRedeemPoint = await getRedeemPoint(token, UID);
+  currentRedeemPoint += redeemPoint;
+  currentLoyalPoint += loyalPoint;
+  if (currentLoyalPoint >= 8) {
+    currentLoyalPoint = 8;
+  }
+  updateLoyalPoint(token, UID, currentLoyalPoint);
+  updateRedeemPoint(token, UID, currentRedeemPoint);
+  const response = await axios.post(
+    `https://react-native-authen-c8e68-default-rtdb.asia-southeast1.firebasedatabase.app/${UID}/order.json?auth=${token}`,
+    order
+  );
 };
 
-export const getOrders = () => {
+export const getOrders = (token, UID) => {
   return new Promise(async (resolve, reject) => {
-    const token = await AsyncStorage.getItem("token");
-    const UID = await AsyncStorage.getItem("UID");
     const expenses = [];
     axios
       .get(
@@ -68,17 +70,18 @@ export const getOrders = () => {
           };
           expenses.push(expenseObj);
         }
+        console.log("expenses", expenses);
         resolve(expenses);
+      })
+      .catch((error) => {
+        console.log("Can not get orders");
       });
   });
 };
 
-export const updateOrderState = async (order) => {
-  const token = await AsyncStorage.getItem("token");
-  const UID = await AsyncStorage.getItem("UID");
+export const updateOrderState = async (order, token, UID) => {
   const key = order.key;
   delete order.key;
-  console.log(key);
   return new Promise((resolve, reject) => {
     axios
       .patch(
@@ -94,9 +97,7 @@ export const updateOrderState = async (order) => {
   });
 };
 
-export const getUserInfo = async () => {
-  const token = await AsyncStorage.getItem("token");
-  const UID = await AsyncStorage.getItem("UID");
+export const getUserInfo = async (token, UID) => {
   return new Promise((resolve, reject) => {
     axios
       .get(
@@ -104,14 +105,13 @@ export const getUserInfo = async () => {
       )
       .then((res) => {
         resolve(res.data);
-      });
+      })
+      .catch((err) => console.log(err));
   });
 };
 
-export const updateUserInfo = async (title, value) => {
-  const token = await AsyncStorage.getItem("token");
-  const UID = await AsyncStorage.getItem("UID");
-  const userInfo = await getUserInfo();
+export const updateUserInfo = async (title, value, token, UID) => {
+  const userInfo = await getUserInfo(token, UID);
   let data = { ...userInfo, [title]: value };
   axios
     .patch(
@@ -123,11 +123,8 @@ export const updateUserInfo = async (title, value) => {
     });
 };
 
-export const removeFromFavorite = async (productId) => {
-  const token = await AsyncStorage.getItem("token");
-  const UID = await AsyncStorage.getItem("UID");
-  const favoriteList = await getFavorite();
-
+export const removeFromFavorite = async (productId, token, UID) => {
+  const favoriteList = await getFavorite(token, UID);
   axios
     .patch(
       `https://react-native-authen-c8e68-default-rtdb.asia-southeast1.firebasedatabase.app/${UID}/favorite/.json?auth=${token}`,
@@ -136,13 +133,11 @@ export const removeFromFavorite = async (productId) => {
       }
     )
     .then((res) => {
-      console.log(res);
+      return res;
     });
 };
 
-export const getFavorite = async () => {
-  const token = await AsyncStorage.getItem("token");
-  const UID = await AsyncStorage.getItem("UID");
+export const getFavorite = async (token, UID) => {
   return new Promise((resolve, reject) => {
     axios
       .get(
@@ -152,4 +147,81 @@ export const getFavorite = async () => {
         resolve(res.data);
       });
   });
+};
+
+export const initLoyalPoints = (token, UID) => {
+  return new Promise((resolve, reject) => {
+    axios
+      .patch(
+        `https://react-native-authen-c8e68-default-rtdb.asia-southeast1.firebasedatabase.app/${UID}/loyalPoint/.json?auth=${token}`,
+        {
+          point: 0,
+        }
+      )
+      .then((res) => {
+        resolve(res);
+      })
+      .catch((err) => console.log("Can not init loyal point!!"));
+  });
+};
+
+export const initRedeemPoints = (token, UID) => {
+  return new Promise((resolve, reject) => {
+    axios
+      .patch(
+        `https://react-native-authen-c8e68-default-rtdb.asia-southeast1.firebasedatabase.app/${UID}/redeemPoint/.json?auth=${token}`,
+        {
+          point: 0,
+        }
+      )
+      .then((res) => {
+        resolve(res);
+      })
+      .catch((err) => console.log("Can not init redeem point!!"));
+  });
+};
+
+export const updateLoyalPoint = (token, UID, point) => {
+  return new Promise((resolve, reject) => {
+    axios
+      .patch(
+        `https://react-native-authen-c8e68-default-rtdb.asia-southeast1.firebasedatabase.app/${UID}/loyalPoint/.json?auth=${token}`,
+        {
+          point: point,
+        }
+      )
+      .then((res) => {
+        resolve(res);
+      })
+      .catch((err) => console.log("Can not update loyal point!!"));
+  });
+};
+export const updateRedeemPoint = (token, UID, point) => {
+  return new Promise((resolve, reject) => {
+    axios
+      .patch(
+        `https://react-native-authen-c8e68-default-rtdb.asia-southeast1.firebasedatabase.app/${UID}/redeemPoint/.json?auth=${token}`,
+        {
+          point: point,
+        }
+      )
+      .then((res) => {
+        resolve(res);
+      })
+      .catch((err) => console.log("Can not update redeem point!!"));
+  });
+};
+
+export const getLoyalPoint = async (token, UID) => {
+  const response = await axios.get(
+    `https://react-native-authen-c8e68-default-rtdb.asia-southeast1.firebasedatabase.app/${UID}/loyalPoint/.json?auth=${token}`
+  );
+  return response.data ? response.data.point : 0;
+};
+
+export const getRedeemPoint = async (token, UID) => {
+  const response = await axios.get(
+    `https://react-native-authen-c8e68-default-rtdb.asia-southeast1.firebasedatabase.app/${UID}/redeemPoint/.json?auth=${token}`
+  );
+  return response.data ? response.data.point : 0;
 };

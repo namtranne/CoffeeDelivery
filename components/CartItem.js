@@ -2,7 +2,6 @@ import { Text } from "react-native";
 import { Image } from "react-native";
 import { TouchableHighlight, View } from "react-native";
 import { themeColors } from "../theme";
-import { MaterialCommunityIcons } from "@expo/vector-icons";
 export const CartItem = (data) => {
   const renderData = data.item.data;
   return (

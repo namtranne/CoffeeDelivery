@@ -13,7 +13,7 @@ import {
 import { StatusBar } from "expo-status-bar";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { themeColors } from "../theme";
-import { useEffect, useRef, useState } from "react";
+import { useContext, useEffect, useRef, useState } from "react";
 import { FlatList } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
@@ -22,6 +22,7 @@ import { OrderItem } from "../components/OrderCard";
 import { getOrders } from "../util/http";
 import { OrdersRender } from "../components/OrdersRender";
 import { useFocusEffect } from "@react-navigation/native";
+import { AuthContext } from "../store/auth-context";
 export const MyOrdersScreen = ({ navigation }) => {
   const [reRender, setRerender] = useState(false);
 
@@ -36,13 +37,16 @@ export const MyOrdersScreen = ({ navigation }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [ref, setRef] = useState(null);
   const [slides, setSlides] = useState([]);
+  const authCtx = useContext(AuthContext);
   const screenWidth = Dimensions.get("window").width;
   function triggerReRender() {
     setRerender((prev) => !prev);
   }
   useEffect(() => {
     async function fetchOrders() {
-      const orders = await getOrders();
+      const token = authCtx.token;
+      const UID = authCtx.UID;
+      const orders = await getOrders(token, UID);
       orders.sort((item1, item2) => {
         return item2.date - item1.date;
       });

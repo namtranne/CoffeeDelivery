@@ -11,11 +11,7 @@ import React, { useContext, useEffect, useState } from "react";
 import { useNavigation } from "@react-navigation/native";
 import { StatusBar } from "expo-status-bar";
 import { SafeAreaView } from "react-native-safe-area-context";
-import {
-  ArrowLeftCircleIcon,
-  MinusIcon,
-  PlusIcon,
-} from "react-native-heroicons/outline";
+import { ArrowLeftCircleIcon } from "react-native-heroicons/outline";
 import { HeartIcon, StarIcon } from "react-native-heroicons/solid";
 import { themeColors } from "../theme";
 import { ShoppingBag } from "react-native-feather";
@@ -23,11 +19,13 @@ import { CoffeeOptions } from "../components/CoffeeOptions";
 import { QuantitySelect } from "../components/QuantitySelect";
 import { addFavorite, getFavorite, removeFromFavorite } from "../util/http";
 import { CartContext } from "../store/cart-context";
+import { AuthContext } from "../store/auth-context";
 const { width, height } = Dimensions.get("window");
 const ios = Platform.OS == "ios";
 
 export default function ProductScreen(props) {
   const cartCtx = useContext(CartContext);
+  const authCtx = useContext(AuthContext);
   const item = props.route.params;
   const [size, setSize] = useState("small");
   const [shot, setShot] = useState("single");
@@ -37,8 +35,10 @@ export default function ProductScreen(props) {
   const [isFavorite, setIsFavorite] = useState(false);
   useEffect(() => {
     async function fetchFavorites() {
-      let favorites = await getFavorite();
-      if (favorites.indexOf(item.id) >= 0) {
+      const token = authCtx.token;
+      const UID = authCtx.UID;
+      let favorites = await getFavorite(token, UID);
+      if (favorites && favorites.indexOf(item.id) >= 0) {
         setIsFavorite(true);
       }
     }
@@ -72,6 +72,21 @@ export default function ProductScreen(props) {
     });
     navigation.navigate("cart");
   }
+
+  function handleAddFavorite(id) {
+    const token = authCtx.token;
+    const UID = authCtx.UID;
+    addFavorite(id, token, UID);
+    setIsFavorite(true);
+  }
+
+  function handleRemoveFavorite(id) {
+    const token = authCtx.token;
+    const UID = authCtx.UID;
+    removeFromFavorite(item.id, token, UID);
+    setIsFavorite(false);
+  }
+
   return (
     <View className="flex-1">
       <StatusBar style="light" />
@@ -102,20 +117,14 @@ export default function ProductScreen(props) {
           {!isFavorite ? (
             <TouchableOpacity
               className=" rounded-full border-2 border-white p-2"
-              onPress={() => {
-                addFavorite(item.id);
-                setIsFavorite(true);
-              }}
+              onPress={handleAddFavorite.bind(this, item.id)}
             >
               <HeartIcon size="24" color="white" />
             </TouchableOpacity>
           ) : (
             <TouchableOpacity
               className=" rounded-full border-2 border-white p-2"
-              onPress={() => {
-                removeFromFavorite(item.id);
-                setIsFavorite(false);
-              }}
+              onPress={handleRemoveFavorite.bind(this, item.id)}
             >
               <HeartIcon size="24" color="red" />
             </TouchableOpacity>

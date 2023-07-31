@@ -8,10 +8,14 @@ import {
 import { themeColors } from "../../theme";
 import { useState } from "react";
 import { updateUserInfo } from "../../util/http";
-export const CommonInput = ({ title, iconName, defaultValue }) => {
+export const CommonInput = ({
+  title,
+  iconName,
+  value,
+  handleUpdateUserInfo,
+}) => {
   const [isEditing, setIsEditing] = useState(false);
-  const [value, setValue] = useState(defaultValue);
-  const [editValue, setEditValue] = useState(defaultValue);
+  const [editValue, setEditValue] = useState(value);
   function onUpdateValue(value) {
     setEditValue(value);
   }
@@ -23,8 +27,7 @@ export const CommonInput = ({ title, iconName, defaultValue }) => {
       return;
     }
     setIsEditing(false);
-    setValue(editValue);
-    updateUserInfo(title, editValue);
+    handleUpdateUserInfo(title, editValue);
   }
   function handleCancel() {
     setIsEditing(false);
@@ -58,13 +61,15 @@ export const CommonInput = ({ title, iconName, defaultValue }) => {
         )}
       </View>
       {!isEditing ? (
-        <Pressable
-          onPress={handleOnPress}
-          className="items-end justify-center"
-          style={{ flex: 2 }}
-        >
-          <FontAwesome5 name="edit" size={24} color="black" />
-        </Pressable>
+        title !== "Email" && (
+          <Pressable
+            onPress={handleOnPress}
+            className="items-end justify-center"
+            style={{ flex: 2 }}
+          >
+            <FontAwesome5 name="edit" size={24} color="black" />
+          </Pressable>
+        )
       ) : (
         <View className="justify-center items-center h-max" style={{ flex: 2 }}>
           <Pressable

@@ -1,13 +1,10 @@
 import {
   View,
   Text,
-  Image,
   TouchableOpacity,
-  TextInput,
   FlatList,
   Dimensions,
   Platform,
-  StyleSheet,
   Pressable,
 } from "react-native";
 import React, { useContext, useEffect, useState } from "react";
@@ -17,32 +14,50 @@ import { StatusBar } from "expo-status-bar";
 import { categories, coffeeItems } from "../constants";
 import Carousel from "react-native-snap-carousel";
 import CoffeeCard from "../components/coffeeCard";
-import { BellIcon, MagnifyingGlassIcon } from "react-native-heroicons/outline";
-import { MapPinIcon } from "react-native-heroicons/solid";
-import { FontAwesome } from "@expo/vector-icons";
 import { AntDesign } from "@expo/vector-icons";
-import { useNavigation, useNavigationState } from "@react-navigation/native";
+import { useNavigation } from "@react-navigation/native";
 import { LoyaltyCard } from "../components/LoyaltyCard";
 import { AuthContext } from "../store/auth-context";
-import { getUserInfo } from "../util/http";
-const { width, height } = Dimensions.get("window");
+import { getLoyalPoint, getUserInfo } from "../util/http";
+import LoadingOverlay from "../components/ui/LoadingOverlay";
+const { width } = Dimensions.get("window");
 const ios = Platform.OS == "ios";
 export default function HomeScreen() {
+  const [reRender, setRerender] = useState(false);
+  useEffect(() => {
+    const unsubscribe = navigation.addListener("focus", () => {
+      setRerender((prev) => !prev);
+    });
+
+    return unsubscribe;
+  }, [navigation]);
   const authCtx = useContext(AuthContext);
   const [activeCategory, setActiveCategory] = useState(null);
   const navigation = useNavigation();
   const [userName, setUserName] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [loyalPoint, setLoyalPoint] = useState(0);
   useEffect(() => {
-    async function fetchUserInfo() {
-      const userInfo = await getUserInfo();
+    async function fetchData() {
+      setIsLoading(true);
+      const token = authCtx.token;
+      const UID = authCtx.UID;
+      const userInfo = await getUserInfo(token, UID);
+      // console.log(userInfo);
       if (userInfo) {
         if (userInfo["Full name"]) {
           setUserName(userInfo["Full name"]);
         }
       }
+      const point = await getLoyalPoint(token, UID);
+      setLoyalPoint(point);
+      setIsLoading(false);
     }
-    fetchUserInfo();
-  }, []);
+    fetchData();
+  }, [reRender]);
+  if (isLoading) {
+    return <LoadingOverlay></LoadingOverlay>;
+  }
   return (
     <View className="flex-1 relative bg-white">
       <StatusBar />
@@ -57,7 +72,7 @@ export default function HomeScreen() {
               className="font-semibold text-xl"
               style={{ color: themeColors.bgDark }}
             >
-              {userName ? userName : "Anderson"}
+              {isLoading ? "..." : userName}
             </Text>
           </View>
 
@@ -81,7 +96,7 @@ export default function HomeScreen() {
         </View>
 
         {/* Loyalty Card */}
-        <LoyaltyCard></LoyaltyCard>
+        <LoyaltyCard point={loyalPoint}></LoyaltyCard>
 
         {/* categories */}
         <View className="px-5 mt-6">

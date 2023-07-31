@@ -2,20 +2,12 @@ import {
   Alert,
   Animated,
   Dimensions,
-  Image,
   Platform,
-  Pressable,
   StyleSheet,
   Text,
-  TouchableHighlight,
-  TouchableOpacity,
   View,
 } from "react-native";
-import { StatusBar } from "expo-status-bar";
-import { SafeAreaView } from "react-native-safe-area-context";
 import { themeColors } from "../theme";
-import { AntDesign } from "@expo/vector-icons";
-import { FontAwesome } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { useContext, useState } from "react";
 import { SwipeListView } from "react-native-swipe-list-view";
@@ -25,6 +17,7 @@ import { CommonButton } from "../components/ui/CommonButton";
 import { CartContext } from "../store/cart-context";
 import { CartItem } from "../components/CartItem";
 import { getUserInfo, placeNewOrder } from "../util/http";
+import { AuthContext } from "../store/auth-context";
 
 const rowTranslateAnimatedValues = {};
 Array(20)
@@ -35,6 +28,7 @@ Array(20)
 
 export const MyCartScreen = () => {
   const cartCtx = useContext(CartContext);
+  const authCtx = useContext(AuthContext);
   const ios = Platform.OS == "ios";
   const navigation = useNavigation();
 
@@ -62,9 +56,12 @@ export const MyCartScreen = () => {
 
   const handlePlaceOrder = async () => {
     const cartList = cartCtx.cartList;
-    const userInfo = await getUserInfo();
+    const token = authCtx.token;
+    const UID = authCtx.UID;
+    const userInfo = await getUserInfo(token, UID);
     console.log(userInfo);
     if (
+      !userInfo ||
       !userInfo["Phone number"] ||
       !userInfo["Address"] ||
       !userInfo["Full name"]
@@ -84,7 +81,9 @@ export const MyCartScreen = () => {
         ]
       );
     } else {
-      placeNewOrder(cartList);
+      const token = authCtx.token;
+      const UID = authCtx.UID;
+      placeNewOrder(cartList, token, UID);
       for (let i = 0; i < cartList.length; i++) {
         cartCtx.removeAll();
       }

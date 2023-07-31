@@ -2,8 +2,10 @@ import { Pressable, Text, View } from "react-native";
 import { MaterialCommunityIcons, Ionicons } from "@expo/vector-icons";
 import { themeColors } from "../theme";
 import { updateOrderState } from "../util/http";
+import { AuthContext } from "../store/auth-context";
+import { useContext } from "react";
 export const OrderItem = ({ data, moveToHistory, triggerReRender }) => {
-  // console.log(data);
+  const authCtx = useContext(AuthContext);
   const options = {
     day: "numeric",
     month: "long",
@@ -13,7 +15,9 @@ export const OrderItem = ({ data, moveToHistory, triggerReRender }) => {
   };
   async function handleOnPress() {
     if (data.state === "delivering") {
-      const res = await updateOrderState(data);
+      const token = authCtx.token;
+      const UID = authCtx.UID;
+      const res = await updateOrderState(data, token, UID);
       triggerReRender();
       moveToHistory();
     }
@@ -27,9 +31,9 @@ export const OrderItem = ({ data, moveToHistory, triggerReRender }) => {
       <View className="my-1">
         <Text className="text-xs text-stone-300">{displayDate}</Text>
       </View>
-      {data.items.map((item) => {
+      {data.items.map((item, index) => {
         return (
-          <View className="flex-row my-1">
+          <View className="flex-row my-1" key={index}>
             <MaterialCommunityIcons
               name="cup"
               size={20}

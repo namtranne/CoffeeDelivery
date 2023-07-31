@@ -1,7 +1,5 @@
 import { Dimensions, ScrollView, View } from "react-native";
 import { OrderItem } from "./OrderCard";
-import { useEffect, useState } from "react";
-import { getOrders } from "../util/http";
 
 export const OrdersRender = ({ item }) => {
   //   console.log("function", item.triggerReRender);

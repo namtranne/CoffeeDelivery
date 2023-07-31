@@ -12,9 +12,8 @@ export const LoginScreen = () => {
   async function loginHandler({ email, password }) {
     setIsAuthenticating(true);
     try {
-      const token = await login(email, password);
-      // console.log("login", token);
-      authCtx.authenticate(token);
+      const { token, UID } = await login(email, password);
+      authCtx.authenticate(token, UID, email);
     } catch (err) {
       console.log(err);
       Alert.alert(
